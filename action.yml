@@ -1,0 +1,6 @@
+name: 'Chalk Post Checkout'
+description: 'Run a chalk command post-checkout'
+runs:
+  using: node20
+  main: dist/index.js
+  post: dist/index.js
