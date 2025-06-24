@@ -47,7 +47,7 @@ async function cleanup(): Promise<void> {
       throw new Error(`Post script not found at: ${scriptPath}`);
     }
 
-    execSync(`sh ${scriptPath}`, { stdio: "inherit" });
+    execSync(`bash ${scriptPath}`, { stdio: "inherit" });
     core.info(`Done`);
   } catch (error) {
     core.warning(`${(error as any)?.message ?? error}`);
