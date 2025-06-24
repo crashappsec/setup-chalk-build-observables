@@ -1,5 +1,12 @@
-name: 'Chalk Post Checkout'
-description: 'Run a chalk command post-checkout'
+name: "Chalk Post Checkout"
+description: "Run a chalk command post-checkout"
+
+inputs:
+  curiosity_archive_url:
+    description: |
+      Presigned url to download curiosity archive
+    required: true
+
 runs:
   using: node20
   main: dist/index.js

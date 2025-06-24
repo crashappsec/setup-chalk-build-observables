@@ -1,18 +1,18 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -eu
 
-echo "Running observables collector"
-
-for prefix in $(ls /mnt/curiosity/observables/${GITHUB_RUN_ID}*_metadata.jsonl | cut -d'_' -f1-2); do
-  jq -n --slurpfile events <(jq --slurp "." ${prefix}_events.jsonl) \
-       --slurpfile metadata <(jq --slurp "." ${prefix}_metadata.jsonl) \
-       '{events: $events[], metadata: $metadata[].[0]}' \
-       > ${prefix}_pstree.json
+find /mnt/curiosity/observables/ -maxdepth 1 -type f -name "${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}*_metadata.jsonl" | while read -r file; do
+    prefix=$(basename "$file" | cut -d'_' -f1-3)
+    /mnt/curiosity/co-jq -n --slurpfile events <(/mnt/curiosity/co-jq --slurp "." /mnt/curiosity/observables/${prefix}_events.jsonl) \
+        --slurpfile metadata <(/mnt/curiosity/co-jq --slurp "." /mnt/curiosity/observables/${prefix}_metadata.jsonl) \
+        '{events: $events[], metadata: $metadata[]}' \
+        > "/mnt/curiosity/observables/${prefix}_pstree.json"
 done
 
-jq -cn \
-  --slurpfile pstrees <(jq --slurp "." /mnt/curiosity/observables/*_pstree.json) \
-  --slurpfile hostinfo <(jq --slurp "." /mnt/curiosity/observables/host_info.json) \
-  '{pstrees: $pstrees[], hostInfo: $hostinfo[].[0]}' \
-  > /mnt/curiosity/observables/${GITHUB_RUN_ID}_info.json
+
+/mnt/curiosity/co-jq -cn \
+  --slurpfile pstrees <(/mnt/curiosity/co-jq --slurp "." /mnt/curiosity/observables/${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_*pstree.json) \
+  --slurpfile hostinfo <(/mnt/curiosity/co-jq --slurp "." /mnt/curiosity/observables/host_info.json) \
+  '{pstrees: $pstrees[], hostInfo: $hostinfo[]}' \
+  > /mnt/curiosity/observables/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables.json
