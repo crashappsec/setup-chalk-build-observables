@@ -2,11 +2,8 @@
 
 set -eu
 
-echo "parsing observables data from /mnt/curiosity"
-
 find /mnt/curiosity/observables/ -maxdepth 1 -type f -name "${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}*_metadata.jsonl" | while read -r file; do
     prefix=$(basename "$file" | cut -d'_' -f1-3)
-    echo "parsing $prefix"
     /mnt/curiosity/co-jq -n --slurpfile events <(/mnt/curiosity/co-jq --slurp "." /mnt/curiosity/observables/${prefix}_events.jsonl) \
         --slurpfile metadata <(/mnt/curiosity/co-jq --slurp "." /mnt/curiosity/observables/${prefix}_metadata.jsonl) \
         '{events: $events[], metadata: $metadata[]}' \
