@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 set -eu
 
@@ -10,6 +10,8 @@ for prefix in $(ls /mnt/curiosity/observables/${GITHUB_RUN_ID}_${GITHUB_RUN_ATTE
        '{events: $events[], metadata: $metadata[].[0]}' \
        > /mnt/curiosity/observables/${prefix}_pstree.json
 done
+
+ls /mnt/curiosity/observables/
 
 /mnt/curiosity/co-jq -cn \
   --slurpfile pstrees <(/mnt/curiosity/co-jq --slurp "." /mnt/curiosity/observables/${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}*_pstree.json) \
