@@ -49,7 +49,8 @@ async function cleanup(): Promise<void> {
 
         execSync(`bash ${scriptPath}`, { stdio: "inherit" });
         core.info(`Done emitting observables json - calling chalk env`);
-        execSync(`bash "chalk env"`, { stdio: "inherit" });
+        execSync(`chalk env`, { stdio: "inherit" });
+        core.info(`Done`);
     } catch (error) {
         core.warning(`${(error as any)?.message ?? error}`);
     }
