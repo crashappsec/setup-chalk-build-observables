@@ -5,8 +5,6 @@ set -eu
 echo "Running observables collector inside /mnt/curiosity"
 ls /mnt/curiosity
 echo "Observables contents"
-tail /mnt/curiosity/co-host.log
-
 ls /mnt/curiosity/observables
 echo "------1111111111111111111----"
 
