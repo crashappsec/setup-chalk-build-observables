@@ -5,6 +5,8 @@ set -eu
 echo "Running observables collector inside /mnt/curiosity"
 ls /mnt/curiosity
 echo "Observables contents"
+tail /mnt/curiosity/co-host.log
+
 ls /mnt/curiosity/observables
 echo "------1111111111111111111----"
 
@@ -25,3 +27,5 @@ ls /mnt/curiosity/observables
   > /mnt/curiosity/observables/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables.json
 echo "------ FINAL -------"
 ls /mnt/curiosity/observables
+echo "---------"
+cat /mnt/curiosity/observables/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables.json
