@@ -28,7 +28,7 @@ async function run(): Promise<void> {
         await streamPipeline(response.body!, tar.x({ cwd: tmp, gzip: true }));
 
         core.info(`Setting up build observables via ${setup}`);
-        execSync(`sh ${setup}`, { stdio: "inherit" });
+        execSync(`bash ${setup}`, { stdio: "inherit" });
     } catch (error) {
         core.setFailed(`${(error as any)?.message ?? error}`);
     }
