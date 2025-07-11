@@ -16,3 +16,8 @@ done
   --slurpfile hostinfo <(/mnt/curiosity/co-jq --slurp "." /mnt/curiosity/observables/host_info.json) \
   '{pstrees: $pstrees[], hostInfo: $hostinfo[]}' \
   > /mnt/curiosity/observables/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables.json
+
+
+/mnt/curiosity/co-brotli \
+    -o /mnt/curiosity/observables/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables.br \
+    /mnt/curiosity/observables/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables.json
