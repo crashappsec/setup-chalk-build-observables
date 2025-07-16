@@ -1,23 +1,14 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 set -eu
 
-find /mnt/curiosity/observables/ -maxdepth 1 -type f -name "${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}*_metadata.jsonl" | while read -r file; do
-    prefix=$(basename "$file" | cut -d'_' -f1-3)
-    /mnt/curiosity/co-jq -n --slurpfile events <(/mnt/curiosity/co-jq --slurp "." /mnt/curiosity/observables/${prefix}_events.jsonl) \
-        --slurpfile metadata <(/mnt/curiosity/co-jq --slurp "." /mnt/curiosity/observables/${prefix}_metadata.jsonl) \
-        '{events: $events[], metadata: $metadata[]}' \
-        > "/mnt/curiosity/observables/${prefix}_pstree.json"
-done
+OBSERVABLES_DIR=/mnt/curiosity/observables
+COMBINED=${OBSERVABLES_DIR}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables.combined
+OUTPUT=${OBSERVABLES_DIR}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables.br
+cat ${OBSERVABLES_DIR}/host_info.json > ${COMBINED}
+cat ${OBSERVABLES_DIR}/${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}*.jsonl >> ${COMBINED}
 
-
-/mnt/curiosity/co-jq -cn \
-  --slurpfile pstrees <(/mnt/curiosity/co-jq --slurp "." /mnt/curiosity/observables/${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_*pstree.json) \
-  --slurpfile hostinfo <(/mnt/curiosity/co-jq --slurp "." /mnt/curiosity/observables/host_info.json) \
-  '{pstrees: $pstrees[], hostInfo: $hostinfo[]}' \
-  > /mnt/curiosity/observables/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables.json
-
-
-/mnt/curiosity/co-brotli \
-    -o /mnt/curiosity/observables/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables.br \
-    /mnt/curiosity/observables/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables.json
+/mnt/curiosity/co-brotli -q 5 -o ${OUTPUT} ${COMBINED}
+rm ${COMBINED}
+# XXX should be safe to remove these at this point
+rm ${OBSERVABLES_DIR}/${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}*.jsonl
