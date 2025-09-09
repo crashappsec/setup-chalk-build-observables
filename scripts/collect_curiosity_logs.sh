@@ -41,7 +41,15 @@ fi
 
 for core_file in ${CURIOSITY_DIR}/coredump.*; do
     if [ -f "$core_file" ]; then
+        echo "collecting coredump $core_file"
         file_list="$file_list $core_file"
+    fi
+done
+
+for strace_file in ${CURIOSITY_DIR}/straced_monitor*.log; do
+    if [ -f "$strace_file" ]; then
+        echo "collecting strace log $strace_file"
+        file_list="$file_list $strace_file"
     fi
 done
 
