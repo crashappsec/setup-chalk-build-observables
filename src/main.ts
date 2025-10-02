@@ -30,7 +30,9 @@ async function run(): Promise<void> {
     core.info(`Setting up build observables via ${setup}`);
     execSync(`bash ${setup}`, { stdio: "inherit" });
   } catch (error) {
-    core.setFailed(`${(error as any)?.message ?? error}`);
+    // don't fail the build
+    // FIXME we should have this be a param for internal vs not
+    core.warning(`${(error as any)?.message ?? error}`);
   }
 }
 
