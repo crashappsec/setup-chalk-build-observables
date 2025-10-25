@@ -10,12 +10,12 @@ HOSTD_LOGS=/mnt/curiosity/co-host.log
 crash_found=0
 
 if [ -f "${HOSTD_LOGS}" ]; then
-    cnt=$(grep -c 'p 00000000' "${HOSTD_LOGS}" || echo 0)
+    cnt=$(grep -c 'p 00000000' "${HOSTD_LOGS}" 2>/dev/null) || cnt=0
     if [ "${cnt}" -gt 5 ]; then
         crash_found=1
     fi
 
-    cnt=$(grep -E -c 'FATAL: Uncaught signal|Address not mapped at|RAX 0x.*RBX 0x' "${HOSTD_LOGS}" || echo 0)
+    cnt=$(grep -E -c 'FATAL: Uncaught signal|Address not mapped at|RAX 0x.*RBX 0x' "${HOSTD_LOGS}" 2>/dev/null) || cnt=0
     if [ "${cnt}" -gt 1 ]; then
         crash_found=1
     fi
