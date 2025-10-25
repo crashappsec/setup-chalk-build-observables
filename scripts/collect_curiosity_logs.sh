@@ -9,18 +9,18 @@ HOSTD_LOGS=/mnt/curiosity/co-host.log
 
 crash_found=0
 
-set +e  # Temporarily disable exit on error for grep commands
-cnt=$(grep -c 'p 00000000' "${HOSTD_LOGS}" 2>/dev/null || echo 0)
-if [ "$cnt" -gt 5 ]; then
-    crash_found=1
+if [ -f "${HOSTD_LOGS}" ]; then
+    cnt=$(grep -c 'p 00000000' "${HOSTD_LOGS}" || echo 0)
+    if [ "${cnt}" -gt 5 ]; then
+        crash_found=1
+    fi
+
+    cnt=$(grep -E -c 'FATAL: Uncaught signal|Address not mapped at|RAX 0x.*RBX 0x' "${HOSTD_LOGS}" || echo 0)
+    if [ "${cnt}" -gt 1 ]; then
+        crash_found=1
+    fi
 fi
 
-cnt=$(grep -E -c 'FATAL: Uncaught signal|Address not mapped at|RAX 0x.*RBX 0x' "${HOSTD_LOGS}" 2>/dev/null || echo 0)
-if [ "$cnt" -gt 1 ]; then
-    crash_found=1
-fi
-# restore
-set -e
 
 if ls ${CURIOSITY_DIR}/coredump.* >/dev/null 2>&1; then
     crash_found=1
