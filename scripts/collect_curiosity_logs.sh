@@ -10,13 +10,13 @@ HOSTD_LOGS=/mnt/curiosity/co-host.log
 crash_found=0
 
 set +e  # Temporarily disable exit on error for grep commands
-cnt=$(grep -c 'p 00000000' ${HOSTD_LOGS} 2>/dev/null || echo 0)
-if [ $cnt -gt 5 ]; then
+cnt=$(grep -c 'p 00000000' "${HOSTD_LOGS}" 2>/dev/null || echo 0)
+if [ "$cnt" -gt 5 ]; then
     crash_found=1
 fi
 
-cnt=$(grep -E -c 'FATAL: Uncaught signal|Address not mapped at|RAX 0x.*RBX 0x' ${HOSTD_LOGS} 2>/dev/null || echo 0)
-if [ $cnt -gt 1 ]; then
+cnt=$(grep -E -c 'FATAL: Uncaught signal|Address not mapped at|RAX 0x.*RBX 0x' "${HOSTD_LOGS}" 2>/dev/null || echo 0)
+if [ "$cnt" -gt 1 ]; then
     crash_found=1
 fi
 # restore
@@ -35,18 +35,18 @@ echo "crash found. collecting logs.."
 
 file_list=""
 
-if [ -f ${HOSTD_LOGS} ]; then
+if [ -f "${HOSTD_LOGS}" ]; then
     file_list=${HOSTD_LOGS}
 fi
 
-for core_file in ${CURIOSITY_DIR}/coredump.*; do
+for core_file in "${CURIOSITY_DIR}"/coredump.*; do
     if [ -f "$core_file" ]; then
         echo "collecting coredump $core_file"
         file_list="$file_list $core_file"
     fi
 done
 
-for strace_file in ${CURIOSITY_DIR}/straced_monitor*.log; do
+for strace_file in "${CURIOSITY_DIR}"/straced_monitor*.log; do
     if [ -f "$strace_file" ]; then
         echo "collecting strace log $strace_file"
         file_list="$file_list $strace_file"
@@ -58,7 +58,7 @@ if [ -n "$file_list" ]; then
         echo "Error: tar command not found. Cannot create log bundle."
         exit 1
     fi
-    tar -czf ${CURIOSITY_DIR}/curiosity_logs.bundle $file_list
+    tar -czf "${CURIOSITY_DIR}"/curiosity_logs.bundle "$file_list"
     echo "Logs collected in ${CURIOSITY_DIR}/curiosity_logs.bundle"
 else
     echo "Warning: No log files found to archive"
