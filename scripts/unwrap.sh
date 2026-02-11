@@ -47,10 +47,10 @@ if [ "$?" -ne 0 ]; then
     echo "I am not root"
     can_i_sudo
     if [ "$?" -ne 0 ]; then
-        echo "I cannot sudo: $SUDO"
+        echo "I cannot sudo"
         return
     fi
-    echo "I can sudo"
+    echo "I can sudo: $SUDO"
 fi
 
 flock "$REFCOUNT_FILE" sh -c '
