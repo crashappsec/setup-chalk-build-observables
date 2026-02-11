@@ -18,12 +18,15 @@ rm ${COMBINED}
 # XXX should be safe to remove these at this point
 rm ${OBSERVABLES_DIR}/${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}*.jsonl
 
-if [ "${CURIOSITY_AUTOUNWRAP:-}" = "1" ]; then
-    echo "stuff"
-    pwd
-    ls -hlia .
-    ls -hlia /mnt/curiosity
-    cat /mnt/curiosity/refcount.txt
-    ls -hlia /usr/bin/
+pwd
+ls -hlia .
+ls -hlia /mnt/curiosity
+ls -hlia /usr/bin/
+
+REFCOUNT_FILE="/mnt/curiosity/refcount.txt"
+if [ -f "$REFCOUNT_FILE" ]; then
+    cat "REFCOUNT_FILE"
+else
+    echo "no refcount file found"
 fi
 
