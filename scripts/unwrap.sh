@@ -50,7 +50,7 @@ if [ "$?" -ne 0 ]; then
         echo "I cannot sudo"
         return
     fi
-    echo "I can sudo"
+    echo "I can sudo: $SUDO"
 fi
 
 flock "$REFCOUNT_FILE" sh -c '
@@ -58,17 +58,19 @@ flock "$REFCOUNT_FILE" sh -c '
     read value < "$file"
     value=$((value - 1))
     if [ "$value" -ne "0" ]; then
-        echo "$value" > "$file"
         echo "Decrement value to $value" 
+        echo "$value" > "$file"
     else
+        echo "Time to unwrap"
+        echo "$SUDO"
         ls -hlia /usr/bin/runc
         ls -hlia /usr/bin/runc.bkp
-        $SUDO mv /usr/bin/runc.bkp /usr/bin/runc
+        "$SUDO" mv /usr/bin/runc.bkp /usr/bin/runc
         ls -hlia /usr/bin/runc
 
         ls -hlia  /mnt/curiosity/docker-buildx.bkp
-        ls -hlia  /usr/libexec/cli-plugins/docker-buildx
-        $SUDO mv /mnt/curiosity/docker-buildx.bkp /usr/libexec/docker/cli-plugins/docker-buildx
+        ls -hlia  /usr/libexec/docker/cli-plugins/docker-buildx
+        "$SUDO" mv /mnt/curiosity/docker-buildx.bkp /usr/libexec/docker/cli-plugins/docker-buildx
         ls -hlia  /usr/libexec/cli-plugins/docker-buildx
     fi
 ' _ "$REFCOUNT_FILE"
