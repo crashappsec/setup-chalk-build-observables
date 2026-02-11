@@ -43,6 +43,7 @@ flock "$REFCOUNT_FILE" sh -c '
     fi
 
     file="$1"
+    cat $file
     read value < "$file"
     value=$((value - 1))
 
