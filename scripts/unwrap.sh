@@ -1,24 +1,15 @@
 #!/usr/bin/env sh
 
-echo "Checking if we need to auto unwrap..."
-if [ "${CURIOSITY_AUTOUNWRAP:-}" != "1" ]; then
-    echo "We don't need to auto unwrap"
-    exit 0
-else
-    echo "We will autounwrap"
-fi
-
-
+echo "Will check if refcount file exists..."
 ls -hlia /mnt/curiosity
 
-echo "Will check if refcount file exists..."
 REFCOUNT_FILE="/mnt/curiosity/refcount.txt"
 if [ ! -f "$REFCOUNT_FILE" ]; then
-    echo "W: No refcount file found...Will exit"
+    echo "No refcount file found...Will exit"
     exit 0
+else
+    echo "refcount file found...Will check if it's time to unwrap"
 fi
-
-echo "OK: refcount file found...Will check if it's time to unwrap"
 
 flock "$REFCOUNT_FILE" sh -c '
      am_i_root(){
