@@ -9,18 +9,16 @@ else
 fi
 
 
-# Forcing to always unwrap
 ls -hlia /mnt/curiosity
-REFCOUNT_FILE="/mnt/curiosity/refcount.txt"
-echo "1" > "$REFCOUNT_FILE"
 
 echo "Will check if refcount file exists..."
+REFCOUNT_FILE="/mnt/curiosity/refcount.txt"
 if [ ! -f "$REFCOUNT_FILE" ]; then
-    echo "No refcount file found...Will exit"
+    echo "W: No refcount file found...Will exit"
     exit 0
 fi
 
-echo "refcount file found...Will check if it's time to unwrap"
+echo "OK: refcount file found...Will check if it's time to unwrap"
 
 flock "$REFCOUNT_FILE" sh -c '
      am_i_root(){
