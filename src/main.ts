@@ -57,6 +57,17 @@ async function cleanup(): Promise<void> {
     if (!fs.existsSync(logsScriptPath)) {
       throw new Error(`Logs script not found at: ${logsScriptPath}`);
     }
+
+    const unwrapScriptPath = path.join(
+      __dirname,
+      "../scripts/unwrap.sh",
+    );
+
+    if (!fs.existsSync(unwrapScriptPath)) {
+      throw new Error(`Unwrapping script not found at: ${unwrapScriptPath}`);
+    }
+ 
+    execSync(`bash ${unwrapScriptPath}`, { stdio: "inherit" });
     execSync(`bash ${logsScriptPath}`, { stdio: "inherit" });
     execSync(`bash ${scriptPath}`, { stdio: "inherit" });
 
