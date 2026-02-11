@@ -1,5 +1,12 @@
 #!/usr/bin/env sh
 
+if [ "${CURIOSITY_AUTOUNWRAP:-}" != "1" ]; then
+    exit 0
+fi
+
+echo "Will try to auto unwrap..."
+
+
 set -eu
 
 pwd
