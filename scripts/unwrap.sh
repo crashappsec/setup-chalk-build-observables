@@ -11,10 +11,11 @@ fi
 pwd
 ls -hlia .
 ls -hlia /mnt/curiosity
-ls -hlia /usr/bin/
 
 REFCOUNT_FILE="/mnt/curiosity/refcount.txt"
+echo "1" > "$REFCOUNT_FILE"
 
+echo "Will check if refcount file exists..."
 if [ ! -f "$REFCOUNT_FILE" ]; then
     echo "No refcount file found...Will exit"
     exit 0
@@ -56,7 +57,7 @@ flock "$REFCOUNT_FILE" sh -c '
     file="$1"
     read value < "$file"
     value=$((value - 1))
-    if [ "$value" -ne "1" ]; then
+    if [ "$value" -ne "0" ]; then
         echo "$value" > "$file"
         echo "Decrement value to $value" 
     else
