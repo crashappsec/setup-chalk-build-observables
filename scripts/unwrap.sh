@@ -1,13 +1,12 @@
 #!/usr/bin/env sh
 
+echo "Checking if we need to auto unwrap..."
 if [ "${CURIOSITY_AUTOUNWRAP:-}" != "1" ]; then
+    echo "We don't need to auto unwrap"
     exit 0
+else
+    echo "We will autounwrap"
 fi
-
-echo "Will try to auto unwrap..."
-
-
-set -eu
 
 pwd
 ls -hlia .
