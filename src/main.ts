@@ -14,7 +14,7 @@ async function run(): Promise<void> {
   try {
     const url: string = core.getInput("curiosity_archive_url");
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "curiosity-"));
-    const setup = path.join(tmp, "curiosity-installer", "setup.sh");
+    const setup = path.join(tmp, "curiosity-installer", "dood-setup.sh");
 
     core.info(`Downloading curiosity archive`);
     const response = await fetch(url);
