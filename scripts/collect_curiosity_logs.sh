@@ -6,6 +6,10 @@ CURIOSITY_DIR=/mnt/curiosity
 # must match setup.sh logs in curiosity-release/wrap_github/setup.sh
 HOSTD_LOGS=/mnt/curiosity/co-host.log
 
+ls -hlia /mnt/curiosity
+
+ls -hlia /mnt/curiosity/observables
+
 
 crash_found=0
 
