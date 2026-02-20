@@ -62,5 +62,6 @@ flock "$REFCOUNT_FILE" sh -c '
         ls -hlia  /usr/libexec/docker/cli-plugins/docker-buildx
         $SUDO mv /mnt/curiosity/docker-buildx.bkp /usr/libexec/docker/cli-plugins/docker-buildx
         ls -hlia  /usr/libexec/docker/cli-plugins/docker-buildx
+        echo "OK: Done unwrapping"
     fi
 ' _ "$REFCOUNT_FILE"
