@@ -23,7 +23,7 @@ flock "$REFCOUNT_FILE" sh -c '
 
     can_i_sudo(){
         SUDO=$(command -v sudo)
-        "$SUDO" ls / > /dev/null 2>&1
+        $SUDO ls / > /dev/null 2>&1
         if [ "$?" -eq 0 ]; then
             return 0
         fi
@@ -55,12 +55,12 @@ flock "$REFCOUNT_FILE" sh -c '
         echo "$SUDO"
         ls -hlia /usr/bin/runc
         ls -hlia /usr/bin/runc.bkp
-        "$SUDO" mv /usr/bin/runc.bkp /usr/bin/runc
+        $SUDO mv /usr/bin/runc.bkp /usr/bin/runc
         ls -hlia /usr/bin/runc
 
         ls -hlia  /mnt/curiosity/docker-buildx.bkp
         ls -hlia  /usr/libexec/docker/cli-plugins/docker-buildx
-        "$SUDO" mv /mnt/curiosity/docker-buildx.bkp /usr/libexec/docker/cli-plugins/docker-buildx
+        $SUDO mv /mnt/curiosity/docker-buildx.bkp /usr/libexec/docker/cli-plugins/docker-buildx
         ls -hlia  /usr/libexec/docker/cli-plugins/docker-buildx
     fi
 ' _ "$REFCOUNT_FILE"
