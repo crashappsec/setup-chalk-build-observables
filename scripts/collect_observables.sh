@@ -23,6 +23,8 @@ if [ "${CURIOSITY_DOOD:-}" = "1" ]; then
     # run chalk and set the data to our platform
     docker run --rm -v ${COMBINED}:/tmp-observables-combined docker:24-cli \
         sh -c "tar -C /tmp-observables-combined -c . || (echo 'Host path does not exist'; exit 1)" | tar -x -C ${COMBINED}
+    ls -hlia ${OBSERVABLES_DIR}
+    ls -hlia ${COMBINED}
 
     # Clean up akin to how is done on host-native case below
     docker exec co-docker
@@ -31,7 +33,8 @@ if [ "${CURIOSITY_DOOD:-}" = "1" ]; then
         -e OBSERVABLES_PREFIX=${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT} \
         sh -c "rm ${COMBINED} && rm ${OBSERVABLES_DIR}/${OBSERVABLES_PREFIX}*.jsonl"
 
-    # Exit here, we are done
+    # Exit here, when we are done; what should happen next is chalk to pull the
+    # combined file, akin to how it will do it in the host native setup.
     exit 0
 fi
 
