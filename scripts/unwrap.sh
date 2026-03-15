@@ -63,5 +63,10 @@ flock "$REFCOUNT_FILE" sh -c '
         $SUDO mv /mnt/curiosity/docker-buildx.bkp /usr/libexec/docker/cli-plugins/docker-buildx
         ls -hlia  /usr/libexec/docker/cli-plugins/docker-buildx
         echo "OK: Done unwrapping"
+
+        docker ps
+        docker stop co-docker > /dev/null 2>&1 && docker rm co-docker > /dev/null 2>&1
+        docker ps
+        echo "OK: Done stopping and removing co-docker"
     fi
 ' _ "$REFCOUNT_FILE"
