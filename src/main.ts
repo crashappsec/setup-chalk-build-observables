@@ -49,6 +49,7 @@ function resolveScripts(installerDir: string): {
 // In validation (CURIOSITY_STRICT=1) fail the step so a broken collection or
 // chalk env blocks a release; in production stay best-effort (warn only).
 function failOrWarn(error: unknown): void {
+  core.info(`failOrWarn`);
   const msg = `${(error as any)?.message ?? error}`;
   if ((process.env.CURIOSITY_STRICT ?? "") === "1") {
     core.setFailed(msg);
