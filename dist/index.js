@@ -73,6 +73,36 @@ function resolveScripts(installerDir) {
     }
     return { unwrap: localPaths[0], logs: localPaths[1], observables: localPaths[2] };
 }
+// Mirror what the GitHub runner does between steps: fold $GITHUB_ENV writes
+// (KEY=VALUE and KEY<<heredoc forms, last value wins) into an env object so a
+// script's env changes are visible to the scripts that run after it within the
+// same step.
+function applyGithubEnv(env) {
+    const file = env.GITHUB_ENV;
+    if (!file || !fs.existsSync(file)) {
+        return env;
+    }
+    const merged = Object.assign({}, env);
+    const lines = fs.readFileSync(file, "utf8").split("\n");
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const heredoc = line.match(/^([^=<]+)<<(.+)$/);
+        if (heredoc) {
+            const [, key, delim] = heredoc;
+            const buf = [];
+            while (++i < lines.length && lines[i] !== delim) {
+                buf.push(lines[i]);
+            }
+            merged[key] = buf.join("\n");
+            continue;
+        }
+        const eq = line.indexOf("=");
+        if (eq > 0) {
+            merged[line.slice(0, eq)] = line.slice(eq + 1);
+        }
+    }
+    return merged;
+}
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
@@ -113,14 +143,17 @@ function cleanup() {
                 throw new Error("Archive path not found in state. Was the setup step skipped?");
             }
             const curiosityHome = core.getState("curiosityHome") || "/mnt/curiosity";
-            const scriptEnv = Object.assign(Object.assign({}, process.env), { CURIOSITY_HOME: curiosityHome });
+            let scriptEnv = Object.assign(Object.assign({}, process.env), { CURIOSITY_HOME: curiosityHome });
             const installerDir = path.join(archivePath, "curiosity-installer");
             const scripts = resolveScripts(installerDir);
             (0, child_process_1.execSync)(`bash ${scripts.unwrap}`, { stdio: "inherit", env: scriptEnv });
+            scriptEnv = applyGithubEnv(scriptEnv);
             (0, child_process_1.execSync)(`bash ${scripts.logs}`, { stdio: "inherit", env: scriptEnv });
+            scriptEnv = applyGithubEnv(scriptEnv);
             (0, child_process_1.execSync)(`bash ${scripts.observables}`, { stdio: "inherit", env: scriptEnv });
+            scriptEnv = applyGithubEnv(scriptEnv);
             core.info(`Done emitting observables json - calling chalk env`);
-            (0, child_process_1.execSync)(`chalk env`, { stdio: "inherit" });
+            (0, child_process_1.execSync)(`chalk env`, { stdio: "inherit", env: scriptEnv });
             core.info(`Done`);
         }
         catch (error) {
