@@ -46,6 +46,17 @@ function resolveScripts(installerDir: string): {
   };
 }
 
+// In validation (CURIOSITY_STRICT=1) fail the step so a broken collection or
+// chalk env blocks a release; in production stay best-effort (warn only).
+function failOrWarn(error: unknown): void {
+  const msg = `${(error as any)?.message ?? error}`;
+  if ((process.env.CURIOSITY_STRICT ?? "") === "1") {
+    core.setFailed(msg);
+  } else {
+    core.warning(msg);
+  }
+}
+
 async function run(): Promise<void> {
   try {
     const url: string = core.getInput("curiosity_archive_url");
@@ -76,9 +87,7 @@ async function run(): Promise<void> {
       env: { ...process.env, CURIOSITY_HOME: curiosityHome },
     });
   } catch (error) {
-    // don't fail the build
-    // FIXME we should have this be a param for internal vs not
-    core.warning(`${(error as any)?.message ?? error}`);
+    failOrWarn(`${(error as any)?.message ?? error}`);
   }
 }
 
@@ -116,7 +125,7 @@ async function cleanup(): Promise<void> {
     execSync(`chalk env`, { stdio: "inherit", env: scriptEnv });
     core.info(`Done`);
   } catch (error) {
-    core.warning(`${(error as any)?.message ?? error}`);
+    failOrWarn(`${(error as any)?.message ?? error}`);
   }
 }
 
