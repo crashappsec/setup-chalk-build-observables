@@ -49,6 +49,21 @@ const child_process_1 = __nccwpck_require__(2081);
 const stream_1 = __nccwpck_require__(2781);
 const util_1 = __nccwpck_require__(3837);
 const streamPipeline = (0, util_1.promisify)(stream_1.pipeline);
+// FIXME: remove bundled scripts/ fallback once all deployed archives include
+// collect_observables.sh and collect_curiosity_logs.sh (i.e. after the first
+// release built with the updated curiosity-release Makefile).
+function resolveScript(name, installerDir) {
+    const archivePath = path.join(installerDir, name);
+    if (fs.existsSync(archivePath)) {
+        return archivePath;
+    }
+    const bundledPath = path.join(__dirname, "../scripts", name);
+    if (fs.existsSync(bundledPath)) {
+        core.info(`${name} not in archive, using bundled fallback`);
+        return bundledPath;
+    }
+    throw new Error(`Script ${name} not found in archive or bundled scripts`);
+}
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
@@ -91,21 +106,12 @@ function cleanup() {
             const curiosityHome = core.getState("curiosityHome") || "/mnt/curiosity";
             const scriptEnv = Object.assign(Object.assign({}, process.env), { CURIOSITY_HOME: curiosityHome });
             const installerDir = path.join(archivePath, "curiosity-installer");
-            const scriptPath = path.join(installerDir, "collect_observables.sh");
-            const logsScriptPath = path.join(installerDir, "collect_curiosity_logs.sh");
-            const unwrapScriptPath = path.join(installerDir, "unwrap.sh");
-            if (!fs.existsSync(unwrapScriptPath)) {
-                throw new Error(`Unwrap script not found at: ${unwrapScriptPath}`);
-            }
-            if (!fs.existsSync(logsScriptPath)) {
-                throw new Error(`Logs script not found at: ${logsScriptPath}`);
-            }
-            if (!fs.existsSync(scriptPath)) {
-                throw new Error(`Observables script not found at: ${scriptPath}`);
-            }
-            (0, child_process_1.execSync)(`bash ${unwrapScriptPath}`, { stdio: "inherit", env: scriptEnv });
-            (0, child_process_1.execSync)(`bash ${logsScriptPath}`, { stdio: "inherit", env: scriptEnv });
-            (0, child_process_1.execSync)(`bash ${scriptPath}`, { stdio: "inherit", env: scriptEnv });
+            const unwrapScript = resolveScript("unwrap.sh", installerDir);
+            const logsScript = resolveScript("collect_curiosity_logs.sh", installerDir);
+            const observablesScript = resolveScript("collect_observables.sh", installerDir);
+            (0, child_process_1.execSync)(`bash ${unwrapScript}`, { stdio: "inherit", env: scriptEnv });
+            (0, child_process_1.execSync)(`bash ${logsScript}`, { stdio: "inherit", env: scriptEnv });
+            (0, child_process_1.execSync)(`bash ${observablesScript}`, { stdio: "inherit", env: scriptEnv });
             core.info(`Done emitting observables json - calling chalk env`);
             (0, child_process_1.execSync)(`chalk env`, { stdio: "inherit" });
             core.info(`Done`);

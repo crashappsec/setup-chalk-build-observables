@@ -1,0 +1,76 @@
+#!/usr/bin/env sh
+
+echo "Will check if refcount file exists..."
+ls -hlia /mnt/curiosity
+
+REFCOUNT_FILE="/mnt/curiosity/refcount.txt"
+if [ ! -f "$REFCOUNT_FILE" ]; then
+    echo "No refcount file found...Will exit"
+    exit 0
+else
+    echo "refcount file found...Will check if it's time to unwrap"
+fi
+
+flock "$REFCOUNT_FILE" sh -c '
+     am_i_root(){
+        local rval=$(whoami)
+        echo "$rval"
+        if [ "$rval" = "root" ]; then
+            return 0
+        fi
+        return 1
+    }
+
+    can_i_sudo(){
+        SUDO=$(command -v sudo)
+        $SUDO ls / > /dev/null 2>&1
+        if [ "$?" -eq 0 ]; then
+            return 0
+        fi
+        return 1
+    }
+
+    SUDO=
+    am_i_root
+    if [ "$?" -ne 0 ]; then
+        echo "I am not root"
+        can_i_sudo
+        if [ "$?" -ne 0 ]; then
+            echo "I cannot sudo"
+            return
+        fi
+        echo "I can sudo: $SUDO"
+    fi
+
+    file="$1"
+    cat $file
+    read value < "$file"
+    value=$((value - 1))
+
+    if [ "$value" -ne "0" ]; then
+        echo "Decrement value to $value" 
+        echo "$value" > "$file"
+    else
+        echo "Time to unwrap"
+        echo "$SUDO"
+        ls -hlia /usr/bin/runc
+        ls -hlia /usr/bin/runc.bkp
+        if [ -f /usr/bin/runc.bkp ]; then
+            $SUDO mv /usr/bin/runc.bkp /usr/bin/runc
+        fi
+        ls -hlia /usr/bin/runc
+
+        ls -hlia  /mnt/curiosity/docker-buildx.bkp
+        ls -hlia  /usr/libexec/docker/cli-plugins/docker-buildx
+        if [ -f /mnt/curiosity/docker-buildx.bkp ]; then
+            $SUDO mv /mnt/curiosity/docker-buildx.bkp /usr/libexec/docker/cli-plugins/docker-buildx
+        fi
+        ls -hlia  /usr/libexec/docker/cli-plugins/docker-buildx
+        echo "OK: Done unwrapping"
+
+        docker ps
+        docker stop co-docker > /dev/null 2>&1 && docker rm co-docker > /dev/null 2>&1
+        docker ps
+        echo "OK: Done stopping and removing co-docker"
+    fi
+' _ "$REFCOUNT_FILE"

@@ -10,10 +10,27 @@ import { promisify } from "util";
 
 const streamPipeline = promisify(pipeline);
 
+// FIXME: remove bundled scripts/ fallback once all deployed archives include
+// collect_observables.sh and collect_curiosity_logs.sh (i.e. after the first
+// release built with the updated curiosity-release Makefile).
+function resolveScript(name: string, installerDir: string): string {
+  const archivePath = path.join(installerDir, name);
+  if (fs.existsSync(archivePath)) {
+    return archivePath;
+  }
+  const bundledPath = path.join(__dirname, "../scripts", name);
+  if (fs.existsSync(bundledPath)) {
+    core.info(`${name} not in archive, using bundled fallback`);
+    return bundledPath;
+  }
+  throw new Error(`Script ${name} not found in archive or bundled scripts`);
+}
+
 async function run(): Promise<void> {
   try {
     const url: string = core.getInput("curiosity_archive_url");
-    const curiosityHome: string = core.getInput("curiosity_home") || "/mnt/curiosity";
+    const curiosityHome: string =
+      core.getInput("curiosity_home") || "/mnt/curiosity";
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "curiosity-"));
     const setup = path.join(tmp, "curiosity-installer", "setup.sh");
 
@@ -31,7 +48,9 @@ async function run(): Promise<void> {
     core.saveState("archivePath", tmp);
     core.saveState("curiosityHome", curiosityHome);
 
-    core.info(`Setting up build observables via ${setup} (CURIOSITY_HOME=${curiosityHome})`);
+    core.info(
+      `Setting up build observables via ${setup} (CURIOSITY_HOME=${curiosityHome})`,
+    );
     execSync(`bash ${setup}`, {
       stdio: "inherit",
       env: { ...process.env, CURIOSITY_HOME: curiosityHome },
@@ -49,30 +68,25 @@ async function cleanup(): Promise<void> {
 
     const archivePath = core.getState("archivePath");
     if (!archivePath) {
-      throw new Error("Archive path not found in state. Was the setup step skipped?");
+      throw new Error(
+        "Archive path not found in state. Was the setup step skipped?",
+      );
     }
 
     const curiosityHome = core.getState("curiosityHome") || "/mnt/curiosity";
     const scriptEnv = { ...process.env, CURIOSITY_HOME: curiosityHome };
-
     const installerDir = path.join(archivePath, "curiosity-installer");
-    const scriptPath = path.join(installerDir, "collect_observables.sh");
-    const logsScriptPath = path.join(installerDir, "collect_curiosity_logs.sh");
-    const unwrapScriptPath = path.join(installerDir, "unwrap.sh");
 
-    if (!fs.existsSync(unwrapScriptPath)) {
-      throw new Error(`Unwrap script not found at: ${unwrapScriptPath}`);
-    }
-    if (!fs.existsSync(logsScriptPath)) {
-      throw new Error(`Logs script not found at: ${logsScriptPath}`);
-    }
-    if (!fs.existsSync(scriptPath)) {
-      throw new Error(`Observables script not found at: ${scriptPath}`);
-    }
+    const unwrapScript = resolveScript("unwrap.sh", installerDir);
+    const logsScript = resolveScript("collect_curiosity_logs.sh", installerDir);
+    const observablesScript = resolveScript(
+      "collect_observables.sh",
+      installerDir,
+    );
 
-    execSync(`bash ${unwrapScriptPath}`, { stdio: "inherit", env: scriptEnv });
-    execSync(`bash ${logsScriptPath}`, { stdio: "inherit", env: scriptEnv });
-    execSync(`bash ${scriptPath}`, { stdio: "inherit", env: scriptEnv });
+    execSync(`bash ${unwrapScript}`, { stdio: "inherit", env: scriptEnv });
+    execSync(`bash ${logsScript}`, { stdio: "inherit", env: scriptEnv });
+    execSync(`bash ${observablesScript}`, { stdio: "inherit", env: scriptEnv });
 
     core.info(`Done emitting observables json - calling chalk env`);
     execSync(`chalk env`, { stdio: "inherit" });
