@@ -6,6 +6,11 @@ inputs:
     description: |
       Presigned url to download curiosity archive
     required: true
+  curiosity_home:
+    description: |
+      Base directory for curiosity binaries and observables data on the runner
+    required: false
+    default: "/mnt/curiosity"
 
 runs:
   using: node20

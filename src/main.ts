@@ -13,6 +13,7 @@ const streamPipeline = promisify(pipeline);
 async function run(): Promise<void> {
   try {
     const url: string = core.getInput("curiosity_archive_url");
+    const curiosityHome: string = core.getInput("curiosity_home") || "/mnt/curiosity";
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "curiosity-"));
     const setup = path.join(tmp, "curiosity-installer", "setup.sh");
 
@@ -27,8 +28,14 @@ async function run(): Promise<void> {
     core.info(`Unpacking curiosity archive to ${tmp}`);
     await streamPipeline(response.body!, tar.x({ cwd: tmp, gzip: true }));
 
-    core.info(`Setting up build observables via ${setup}`);
-    execSync(`bash ${setup}`, { stdio: "inherit" });
+    core.saveState("archivePath", tmp);
+    core.saveState("curiosityHome", curiosityHome);
+
+    core.info(`Setting up build observables via ${setup} (CURIOSITY_HOME=${curiosityHome})`);
+    execSync(`bash ${setup}`, {
+      stdio: "inherit",
+      env: { ...process.env, CURIOSITY_HOME: curiosityHome },
+    });
   } catch (error) {
     // don't fail the build
     // FIXME we should have this be a param for internal vs not
@@ -40,36 +47,32 @@ async function cleanup(): Promise<void> {
   try {
     core.info(`Collecting build observable data...`);
 
-    const scriptPath = path.join(
-      __dirname,
-      "../scripts/collect_observables.sh",
-    );
-
-    if (!fs.existsSync(scriptPath)) {
-      throw new Error(`Post script not found at: ${scriptPath}`);
+    const archivePath = core.getState("archivePath");
+    if (!archivePath) {
+      throw new Error("Archive path not found in state. Was the setup step skipped?");
     }
 
-    const logsScriptPath = path.join(
-      __dirname,
-      "../scripts/collect_curiosity_logs.sh",
-    );
+    const curiosityHome = core.getState("curiosityHome") || "/mnt/curiosity";
+    const scriptEnv = { ...process.env, CURIOSITY_HOME: curiosityHome };
 
+    const installerDir = path.join(archivePath, "curiosity-installer");
+    const scriptPath = path.join(installerDir, "collect_observables.sh");
+    const logsScriptPath = path.join(installerDir, "collect_curiosity_logs.sh");
+    const unwrapScriptPath = path.join(installerDir, "unwrap.sh");
+
+    if (!fs.existsSync(unwrapScriptPath)) {
+      throw new Error(`Unwrap script not found at: ${unwrapScriptPath}`);
+    }
     if (!fs.existsSync(logsScriptPath)) {
       throw new Error(`Logs script not found at: ${logsScriptPath}`);
     }
-
-    const unwrapScriptPath = path.join(
-      __dirname,
-      "../scripts/unwrap.sh",
-    );
-
-    if (!fs.existsSync(unwrapScriptPath)) {
-      throw new Error(`Unwrapping script not found at: ${unwrapScriptPath}`);
+    if (!fs.existsSync(scriptPath)) {
+      throw new Error(`Observables script not found at: ${scriptPath}`);
     }
- 
-    execSync(`bash ${unwrapScriptPath}`, { stdio: "inherit" });
-    execSync(`bash ${logsScriptPath}`, { stdio: "inherit" });
-    execSync(`bash ${scriptPath}`, { stdio: "inherit" });
+
+    execSync(`bash ${unwrapScriptPath}`, { stdio: "inherit", env: scriptEnv });
+    execSync(`bash ${logsScriptPath}`, { stdio: "inherit", env: scriptEnv });
+    execSync(`bash ${scriptPath}`, { stdio: "inherit", env: scriptEnv });
 
     core.info(`Done emitting observables json - calling chalk env`);
     execSync(`chalk env`, { stdio: "inherit" });
