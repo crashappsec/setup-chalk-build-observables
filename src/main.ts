@@ -10,20 +10,35 @@ import { promisify } from "util";
 
 const streamPipeline = promisify(pipeline);
 
-// FIXME: remove bundled scripts/ fallback once all deployed archives include
-// collect_observables.sh and collect_curiosity_logs.sh (i.e. after the first
-// release built with the updated curiosity-release Makefile).
-function resolveScript(name: string, installerDir: string): string {
-  const archivePath = path.join(installerDir, name);
-  if (fs.existsSync(archivePath)) {
-    return archivePath;
+function resolveScripts(installerDir: string): {
+  unwrap: string;
+  logs: string;
+  observables: string;
+} {
+  const names = [
+    "unwrap.sh",
+    "collect_curiosity_logs.sh",
+    "collect_observables.sh",
+  ];
+  const archivePaths = names.map((n) => path.join(installerDir, n));
+  const bundleComplete = archivePaths.every((p) => fs.existsSync(p));
+
+  if (bundleComplete) {
+    return {
+      unwrap: archivePaths[0],
+      logs: archivePaths[1],
+      observables: archivePaths[2],
+    };
   }
-  const bundledPath = path.join(__dirname, "../scripts", name);
-  if (fs.existsSync(bundledPath)) {
-    core.info(`${name} not in archive, using bundled fallback`);
-    return bundledPath;
+
+  core.info("Bundle incomplete, using local scripts/ fallback for all");
+  const localDir = path.join(__dirname, "../scripts");
+  const localPaths = names.map((n) => path.join(localDir, n));
+  const allLocal = localPaths.every((p) => fs.existsSync(p));
+  if (!allLocal) {
+    throw new Error("Scripts missing from both archive and local scripts/");
   }
-  throw new Error(`Script ${name} not found in archive or bundled scripts`);
+  return { unwrap: localPaths[0], logs: localPaths[1], observables: localPaths[2] };
 }
 
 async function run(): Promise<void> {
@@ -77,16 +92,11 @@ async function cleanup(): Promise<void> {
     const scriptEnv = { ...process.env, CURIOSITY_HOME: curiosityHome };
     const installerDir = path.join(archivePath, "curiosity-installer");
 
-    const unwrapScript = resolveScript("unwrap.sh", installerDir);
-    const logsScript = resolveScript("collect_curiosity_logs.sh", installerDir);
-    const observablesScript = resolveScript(
-      "collect_observables.sh",
-      installerDir,
-    );
+    const scripts = resolveScripts(installerDir);
 
-    execSync(`bash ${unwrapScript}`, { stdio: "inherit", env: scriptEnv });
-    execSync(`bash ${logsScript}`, { stdio: "inherit", env: scriptEnv });
-    execSync(`bash ${observablesScript}`, { stdio: "inherit", env: scriptEnv });
+    execSync(`bash ${scripts.unwrap}`, { stdio: "inherit", env: scriptEnv });
+    execSync(`bash ${scripts.logs}`, { stdio: "inherit", env: scriptEnv });
+    execSync(`bash ${scripts.observables}`, { stdio: "inherit", env: scriptEnv });
 
     core.info(`Done emitting observables json - calling chalk env`);
     execSync(`chalk env`, { stdio: "inherit" });
