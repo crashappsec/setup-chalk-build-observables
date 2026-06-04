@@ -7,6 +7,7 @@ import * as tar from "tar";
 import { execSync } from "child_process";
 import { pipeline } from "stream";
 import { promisify } from "util";
+import { applyGithubEnv } from "./github-env";
 
 const streamPipeline = promisify(pipeline);
 
@@ -38,7 +39,11 @@ function resolveScripts(installerDir: string): {
   if (!allLocal) {
     throw new Error("Scripts missing from both archive and local scripts/");
   }
-  return { unwrap: localPaths[0], logs: localPaths[1], observables: localPaths[2] };
+  return {
+    unwrap: localPaths[0],
+    logs: localPaths[1],
+    observables: localPaths[2],
+  };
 }
 
 async function run(): Promise<void> {
@@ -89,17 +94,26 @@ async function cleanup(): Promise<void> {
     }
 
     const curiosityHome = core.getState("curiosityHome") || "/mnt/curiosity";
-    const scriptEnv = { ...process.env, CURIOSITY_HOME: curiosityHome };
+    let scriptEnv: NodeJS.ProcessEnv = {
+      ...process.env,
+      CURIOSITY_HOME: curiosityHome,
+    };
     const installerDir = path.join(archivePath, "curiosity-installer");
 
     const scripts = resolveScripts(installerDir);
 
     execSync(`bash ${scripts.unwrap}`, { stdio: "inherit", env: scriptEnv });
+    scriptEnv = applyGithubEnv(scriptEnv);
     execSync(`bash ${scripts.logs}`, { stdio: "inherit", env: scriptEnv });
-    execSync(`bash ${scripts.observables}`, { stdio: "inherit", env: scriptEnv });
+    scriptEnv = applyGithubEnv(scriptEnv);
+    execSync(`bash ${scripts.observables}`, {
+      stdio: "inherit",
+      env: scriptEnv,
+    });
+    scriptEnv = applyGithubEnv(scriptEnv);
 
     core.info(`Done emitting observables json - calling chalk env`);
-    execSync(`chalk env`, { stdio: "inherit" });
+    execSync(`chalk env`, { stdio: "inherit", env: scriptEnv });
     core.info(`Done`);
   } catch (error) {
     core.warning(`${(error as any)?.message ?? error}`);
