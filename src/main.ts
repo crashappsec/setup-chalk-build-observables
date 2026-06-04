@@ -7,6 +7,7 @@ import * as tar from "tar";
 import { execSync } from "child_process";
 import { pipeline } from "stream";
 import { promisify } from "util";
+import { applyGithubEnv } from "./github-env";
 
 const streamPipeline = promisify(pipeline);
 
@@ -38,38 +39,11 @@ function resolveScripts(installerDir: string): {
   if (!allLocal) {
     throw new Error("Scripts missing from both archive and local scripts/");
   }
-  return { unwrap: localPaths[0], logs: localPaths[1], observables: localPaths[2] };
-}
-
-// Mirror what the GitHub runner does between steps: fold $GITHUB_ENV writes
-// (KEY=VALUE and KEY<<heredoc forms, last value wins) into an env object so a
-// script's env changes are visible to the scripts that run after it within the
-// same step.
-function applyGithubEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  const file = env.GITHUB_ENV;
-  if (!file || !fs.existsSync(file)) {
-    return env;
-  }
-  const merged = { ...env };
-  const lines = fs.readFileSync(file, "utf8").split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const heredoc = line.match(/^([^=<]+)<<(.+)$/);
-    if (heredoc) {
-      const [, key, delim] = heredoc;
-      const buf: string[] = [];
-      while (++i < lines.length && lines[i] !== delim) {
-        buf.push(lines[i]);
-      }
-      merged[key] = buf.join("\n");
-      continue;
-    }
-    const eq = line.indexOf("=");
-    if (eq > 0) {
-      merged[line.slice(0, eq)] = line.slice(eq + 1);
-    }
-  }
-  return merged;
+  return {
+    unwrap: localPaths[0],
+    logs: localPaths[1],
+    observables: localPaths[2],
+  };
 }
 
 async function run(): Promise<void> {
@@ -132,7 +106,10 @@ async function cleanup(): Promise<void> {
     scriptEnv = applyGithubEnv(scriptEnv);
     execSync(`bash ${scripts.logs}`, { stdio: "inherit", env: scriptEnv });
     scriptEnv = applyGithubEnv(scriptEnv);
-    execSync(`bash ${scripts.observables}`, { stdio: "inherit", env: scriptEnv });
+    execSync(`bash ${scripts.observables}`, {
+      stdio: "inherit",
+      env: scriptEnv,
+    });
     scriptEnv = applyGithubEnv(scriptEnv);
 
     core.info(`Done emitting observables json - calling chalk env`);
