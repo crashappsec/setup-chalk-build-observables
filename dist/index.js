@@ -157,6 +157,19 @@ function resolveScripts(installerDir) {
         observables: localPaths[2],
     };
 }
+// In validation (CURIOSITY_STRICT=1) fail the step so a broken collection or
+// chalk env blocks a release; in production stay best-effort (warn only).
+function failOrWarn(error) {
+    var _a, _b;
+    core.info(`failOrWarn`);
+    const msg = `${(_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : error}`;
+    if (((_b = process.env.CURIOSITY_STRICT) !== null && _b !== void 0 ? _b : "") === "1") {
+        core.setFailed(msg);
+    }
+    else {
+        core.warning(msg);
+    }
+}
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
@@ -181,9 +194,7 @@ function run() {
             });
         }
         catch (error) {
-            // don't fail the build
-            // FIXME we should have this be a param for internal vs not
-            core.warning(`${(_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : error}`);
+            failOrWarn(`${(_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : error}`);
         }
     });
 }
@@ -214,7 +225,7 @@ function cleanup() {
             core.info(`Done`);
         }
         catch (error) {
-            core.warning(`${(_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : error}`);
+            failOrWarn(`${(_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : error}`);
         }
     });
 }
